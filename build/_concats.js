@@ -8,3 +8,4 @@ module.exports = exports = [
   require('../public/pl/_concat.json'),
   require('../public/zh/_concat.json'),
 ];
+

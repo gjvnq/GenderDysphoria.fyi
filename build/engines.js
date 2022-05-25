@@ -16,6 +16,32 @@ const i18n = require('./lang');
 
 const mAnchor = require('markdown-it-anchor');
 
+const dateFNS = require('date-fns');
+const dateFNSLocales = require('date-fns/locale');
+const str2locale = {
+  'en': dateFNSLocales.enUS,
+  'zh': dateFNSLocales.zhCN,
+  'de': dateFNSLocales.de,
+  'fr': dateFNSLocales.fr,
+  'hu': dateFNSLocales.hu,
+  'pl': dateFNSLocales.pl,
+  'es': dateFNSLocales.es
+};
+
+const translationLinksRaw = require('../translation-links.json');
+let translationLinksMap = {};
+
+for (const group of translationLinksRaw) {
+  for (const [lang, url] of Object.entries(group)) {
+    if (url in translationLinksMap) {
+      console.log("URL '"+url+"' appears repeatedly on translation-links.json");
+      process.exit(1);
+    } else {
+      translationLinksMap[url] = group;
+    }
+  }
+}
+
 const markdownEngines = {
   full: markdownIt({
     html: true,
@@ -181,12 +207,15 @@ class Injectables {
 
   helpers () {
     return {
-      import:   this.import(),
-      markdown: this.markdown(),
-      icon:     this.icon(),
-      prod:     this.production(),
-      rev:      this.rev(),
-      lang:     this.lang(),
+      import:    this.import(),
+      markdown:  this.markdown(),
+      icon:      this.icon(),
+      coalesce:  this.coalesce(),
+      translink: this.translink(),
+      prod:      this.production(),
+      rev:       this.rev(),
+      lang:      this.lang(),
+      date:      this.date(),
     };
   }
 
@@ -278,6 +307,135 @@ class Injectables {
       const { resolve: rval } = args.pop();
       const lang = rval('@root.this.page.lang').split('-')[0];
       return i18n(lang, key, ...args);
+    };
+  }
+
+  // Find the translation links for the current page from the file translation-links.json
+  //
+  // If a single argument is present, a single string will be returned, otherwise an
+  // object with links for all languages will be returned
+  translink () {
+    return function (...raw_args) {
+      let { resolve: rval, arguments: args } = raw_args.pop();
+      args.push(undefined, undefined);
+      const lang = args[0];
+      const fallback = args[1];
+      const page_url = rval('@root.this.url').trim();
+
+      let ans = translationLinksMap[page_url] || {};
+      if (lang !== undefined) {
+        ans = ans[lang];
+      }
+
+      if (ans === undefined) {
+        ans = fallback;
+      }
+
+      return ans;
+    };
+  }
+
+  // Given a list of arguments, returns the firt that isn't undefined
+  coalesce () {
+    return function (...raw_args) {
+      const { arguments: args } = raw_args.pop();
+      for (let arg in args) {
+        if (args[arg] !== undefined) {
+          return args[arg];
+        }
+      }
+      return undefined;
+    };
+  }
+
+  date () {
+    // {{date}} -> prints current date
+    // {{date datestr}} -> prints date in datestr
+    // {{date datestr datefmt}} -> prints date in datestr in format datefmt
+    // {{date datestr datefmt lang}} -> prints date in datestr in format datefmt according to conventions for language lang
+    // 
+    // If lang is not specified, it will be extracted from the page metadata. If that is not available, English
+    // will be assumed.
+    // 
+    // In case of errors, the date will be returned as an ISO string if possible and its raw datestr input otherwise.
+    // 
+    // Datestr can be the string "now", `undefined`, and anything parsable by `new Date()`.
+    // 
+    // Datefmt format is available at https://date-fns.org/v2.25.0/docs/format
+    return function (...args) {
+      let extra = args.pop();
+      let datestr, dateobj, datefmt, lang;
+
+      const { resolve: rval } = extra;
+      const filename = rval('@value.input');
+      lang = (rval('@root.this.page.lang') || 'en').split('-')[0];
+
+      switch (args.length) {
+      case 0:
+        datestr = "now";
+        break;
+      case 1:
+        datestr = args[0];
+        break;
+      case 2:
+        datestr = args[0];
+        datefmt = args[1];
+        break;
+      case 3:
+        datestr = args[0];
+        datefmt = args[1];
+        lang = args[2];
+        break;
+      default:
+        throw new Exception('wrong number of arguments for {{date}}, got '+args.length+' maximum is 3');
+      }
+
+      if (datestr === "now" || datestr === undefined) {
+        dateobj = new Date();
+      } else {
+        dateobj = new Date(datestr);
+      }
+
+      if (!dateFNS.isValid(dateobj)) {
+        console.trace('Invalid input for date: ', { datestr, filename, args, extra });
+        return datestr.toString();
+      }
+
+      if (lang === undefined) {
+        return dateobj.toISOString();
+      }
+
+      const locale = str2locale[lang];
+      if (locale === undefined) {
+        console.warn('Locale not found: '+lang);
+      }
+
+      if (datefmt === undefined || locale === undefined) {
+        const options = {
+          weekday: 'short',
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          timeZone: 'UTC',
+          timeZoneName: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        };
+        try {
+          return dateobj.toLocaleString(lang, options);
+        } catch (error) {
+          console.trace('Something went horribly wrong while formating dates.', { error, filename, args, extra });
+          return dateobj.toISOString();
+        }
+      }
+
+      try {
+        return dateFNS.format(dateobj, datefmt, {locale: locale});
+      } catch (error) {
+        console.trace('Something went horribly wrong while formating dates.', { error, filename, args, extra });
+        return dateobj.toISOString();
+      }
     };
   }
 

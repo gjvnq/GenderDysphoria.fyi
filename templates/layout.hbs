@@ -7,8 +7,8 @@
   <meta name="referrer" content="origin-when-cross-origin">
   <meta name="author" content="{{site.author}}">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta property="og:site_name" content="{{site.title}}">
-  <meta name="twitter:site" content="{{site.title}}">
+  <meta property="og:site_name" content="{{{lang 'SITE_TITLE'}}}">
+  <meta name="twitter:site" content="{{{lang 'SITE_TITLE'}}}">
   <meta name="twitter:creator" content="{{site.creator}}">
   {{block "meta"}}
   <title>{{page.title}}</title>
@@ -49,7 +49,7 @@
   <link href="//fonts.googleapis.com/css?family=Sriracha:400" rel="stylesheet">
   <link href="//fonts.googleapis.com/css?family=Lato:100,200,300,400,700,800" rel="stylesheet">
   <link href="//fonts.googleapis.com/css?family=Roboto:300,400,600" rel="stylesheet">
-  <link href="//fonts.googleapis.com/css?family=Gothic+A1:300,400,600" rel="stylesheet">
+  <link href="//fonts.googleapis.com/css?family=Inter:wght@300;400;600" rel="stylesheet">
   {{#block "prescripts"}}
   <script type="text/javascript" src="{{rev '/js/global.js'}}" data-i-url="{{#prod}}//t.{{page.domain}}{{/prod}}/i"></script>
   {{/block}}
@@ -59,7 +59,7 @@
   <div class="root">
     <header>
       <nav>
-        <a href="/" class="top-brand">{{{lang 'HEADER_TITLE'}}}</a>
+        <a href="/{{page.lang}}" class="top-brand">{{{lang 'HEADER_TITLE'}}}</a>
 
         <div class="top-nav">
           <ul class="top-nav-inner">
