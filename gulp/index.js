@@ -8,6 +8,7 @@ var build = require('../build');
 const devBuildTask  = build.everything();
 const prodBuildTask = build.everything(true);
 const pagesTask = build.pages();
+const twitterTask = build.twitter();
 exports.pages = () => pagesTask();
 
 const scss    = exports.scss    = build.task('scss');
@@ -24,6 +25,8 @@ exports.push = pushToProd;
 const cloudfront = require('./cloudfront');
 exports.cloudfront = cloudfront;
 
+const { offlineTask } = require('./offline');
+
 exports.new = require('../build/new-post.js');
 
 function copyProd () {
@@ -32,6 +35,7 @@ function copyProd () {
 
 /** **************************************************************************************************************** **/
 
+exports.offline = offlineTask;
 exports.dev  = series(devBuildTask);
 exports.prod = series(prodBuildTask);
 exports.publish = series(
@@ -47,12 +51,16 @@ exports.testpush = pushToProd.dryrun;
 /** **************************************************************************************************************** **/
 
 function watcher () {
+  watch([
+    'translation-links.json',
+    'public/**/*.{md,hbs,html,js,json}',
+    'posts/**/*.{md,hbs,html,js,json}',
+    'templates/*.{md,hbs,html,js,json}',
+  ], pagesTask);
 
   watch([
-    'public/**/*.{md,hbs,html}',
-    'posts/**/*.{md,hbs,html}',
-    'templates/*.{md,hbs,html}',
-  ], pagesTask);
+    'twitter-i18n.json',
+  ], series(twitterTask, pagesTask));
 
   watch([
     'scss/*.scss',
