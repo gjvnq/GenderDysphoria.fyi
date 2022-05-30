@@ -277,6 +277,7 @@ abbr[data-title] {
 }
 
 // Shows tooltips for <abbr> on mobile
+// BUG: this doesn't work in the header when <nav> is flex, but works otherwise
 abbr[data-title]:hover::after,
 abbr[data-title]:focus::after {
   // Get the value from the data-title attribute

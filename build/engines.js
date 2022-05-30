@@ -16,6 +16,9 @@ const i18n = require('./lang');
 
 const mAnchor = require('markdown-it-anchor');
 
+const chalk = require('chalk');
+const pkg  = require(resolve('package.json'));
+
 const dateFNS = require('date-fns');
 const dateFNSLocales = require('date-fns/locale');
 const str2locale = {
@@ -28,13 +31,20 @@ const str2locale = {
   'es': dateFNSLocales.es
 };
 
+// Check we didn't forget any languages
+for (const lang of pkg.siteInfo.allLangs) {
+  if (!(lang in str2locale)) {
+    log.error(chalk.red('Forgot to setup locale: '+lang));
+  }
+}
+
 const translationLinksRaw = require('../translation-links.json');
 let translationLinksMap = {};
 
 for (const group of translationLinksRaw) {
   for (const [lang, url] of Object.entries(group)) {
     if (url in translationLinksMap) {
-      console.log("URL '"+url+"' appears repeatedly on translation-links.json");
+      log.warn(chalk.yellow("URL '"+chalk.magenta(url)+"' appears repeatedly on translation-links.json"));
       process.exit(1);
     } else {
       translationLinksMap[url] = group;
@@ -215,6 +225,7 @@ class Injectables {
       prod:      this.production(),
       rev:       this.rev(),
       lang:      this.lang(),
+      lang2:      this.lang2(),
       date:      this.date(),
     };
   }
@@ -302,10 +313,19 @@ class Injectables {
     };
   }
 
+  // Usage {{lang 'MY-STRING'}}
   lang () {
     return function (key, ...args) {
       const { resolve: rval } = args.pop();
       const lang = rval('@root.this.page.lang').split('-')[0];
+      return i18n(lang, key, ...args);
+    };
+  }
+
+  // Usage {{lang2 other-lang 'MY-STRING'}}
+  lang2 () {
+    return function (lang, key, ...args) {
+      const { resolve: rval } = args.pop();
       return i18n(lang, key, ...args);
     };
   }

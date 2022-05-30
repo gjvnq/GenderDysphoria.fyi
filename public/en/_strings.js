@@ -1,11 +1,12 @@
 
 module.exports = exports = {
-  MENU_LANGUAGE: 'English (EN)',
+  MENU_LANGUAGE_SHORT: 'English (EN)',
+  MENU_LANGUAGE_LONG: 'English (EN)',
   SITE_TITLE: 'That\'s Gender Dysphoria, FYI',
-  HEADER_TITLE: 'That\'s Gender Dysphoria, <abbr title="For Your Information">FYI</abbr>',
+  HEADER_TITLE: 'That\'s Gender Dysphoria, <abbr data-title="For Your Information">FYI</abbr>',
   SITE_DESCRIPTION: 'A resource for those questioning their gender, already on a gender journey, or simply wanting to learn more about what it is to be transgender.',
-  'TRANS_TWITTER_TOPICS': 'Trans Twitter Topics',
 
+  TRANS_TWITTER_TOPICS: 'Trans Twitter Topics',
   TWEET_DATE_FORMAT: 'h:mm aa - EEE, LLL do, yyyy',
   MISSING_TWEET_FOR: 'Missing tweet for ',
   QUOTED_TWEET_UNAVAILABLE: 'Quoted Tweet Unavailable',
